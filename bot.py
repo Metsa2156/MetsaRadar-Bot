@@ -2,11 +2,9 @@ import requests
 import time
 import random
 
-# VERİTABANI VE İTTİFAK KİMLİĞİ
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
 ALLIANCE_ID = "b12ec89de52444eb82ad74c36b96f521"
 
-# HELİKOPTERLER UÇAK OLARAK DEĞİŞTİRİLDİ
 HERO_TYPES = {
     50006: "Tank", 50007: "Tank", 50008: "Tank", 50009: "Tank", 50010: "Tank",
     40006: "Tank", 40008: "Tank", 40009: "Tank", 40010: "Tank", 40012: "Tank", 40020: "Tank",
@@ -28,20 +26,27 @@ def get_headers():
     return {"User-Agent": random.choice(USER_AGENTS), "Accept": "application/json"}
 
 def main():
-    print("Gölge İşçi Başladı! Hedef: LwAtlas...")
+    print("Gölge İşçi Başladı ve Can Damarı Bağlandı!")
     
     try:
-        fb_res = requests.get(FIREBASE_URL)
+        fb_res = requests.get(FIREBASE_URL, timeout=10)
         history_map = fb_res.json() if fb_res.status_code == 200 and fb_res.json() else {}
-    except:
+        print("Firebase bağlantısı başarılı.")
+    except Exception as e:
+        print(f"Firebase bağlantı hatası: {e}")
         history_map = {}
 
     members_url = f"https://lwatlas.com/api/v1/alliances/{ALLIANCE_ID}/members"
+    print(f"LwAtlas'a istek atılıyor: {members_url}")
+    
     try:
+        # 15 saniye içinde cevap gelmezse patlamasın, yakalasın diye timeout eklendi
         res = requests.get(members_url, headers=get_headers(), timeout=15)
+        print(f"LwAtlas Yanıt Kodu: {res.status_code}")
         raw_members = res.json().get("members", [])
+        print(f"Toplam üye bulundu: {len(raw_members)}")
     except Exception as e:
-        print("LwAtlas ana listeye erişilemedi.")
+        print(f"LwAtlas ana listeye erişilemedi, hata: {e}")
         return
 
     random.shuffle(raw_members)
@@ -74,8 +79,8 @@ def main():
         if total_power >= 9000000:
             squad_url = f"https://api.lwatlas.com/v1/players/{uid}/squads"
             
-            for attempt in range(3):
-                time.sleep(random.uniform(2.0, 4.0)) 
+            for attempt in range(2):
+                time.sleep(random.uniform(1.5, 3.0)) 
                 try:
                     sq_res = requests.get(squad_url, headers=get_headers(), timeout=10)
                     if sq_res.status_code == 200:
@@ -103,16 +108,15 @@ def main():
                                     max_c = c
                                     en_yuksek_tur = t
                             
-                            # YENİ HİBRİT MANTIĞI
                             if max_c >= 3:
-                                api_type = en_yuksek_tur # Safkan (Örn: Uçak)
+                                api_type = en_yuksek_tur 
                             elif max_c == 2:
-                                api_type = f"{en_yuksek_tur} Hibrit" # Baskın Hibrit (Örn: Tank Hibrit)
+                                api_type = f"{en_yuksek_tur} Hibrit" 
                             else:
-                                api_type = "Hibrit" # Hepsi 1'er taneyse (Çok nadir)
+                                api_type = "Hibrit" 
                         break 
                     elif sq_res.status_code in [403, 429]:
-                        time.sleep(5) 
+                        time.sleep(3) 
                 except:
                     time.sleep(2)
 
@@ -145,7 +149,7 @@ def main():
         print(f"Tarandı: {name} | Güç: {final_power} | Tür: {save_type}")
 
     try:
-        requests.put(FIREBASE_URL, json=new_data)
+        requests.put(FIREBASE_URL, json=new_data, timeout=15)
         print("Tüm veriler Firebase'e başarıyla yazıldı!")
     except Exception as e:
         print(f"Firebase yazma hatası: {e}")

@@ -3,7 +3,7 @@ import time
 import random
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
-ALLIANCE_ID = "b12ec89de52444eb82ad74c36b96f521"
+ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
 
 HERO_TYPES = {
     50006: "Tank", 50007: "Tank", 50008: "Tank", 50009: "Tank", 50010: "Tank",

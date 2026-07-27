@@ -1,6 +1,7 @@
 import requests
 import time
 import random
+import sys  # Ölümcül hata sigortası için eklendi
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
 ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
@@ -33,7 +34,7 @@ def get_headers():
     }
 
 def main():
-    print("Gölge İşçi Başladı! (Yeni JSON ve Kamyon Filtresi Aktif)")
+    print("Gölge İşçi Başladı! (Ölümcül Hata Sigortası Aktif)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
@@ -49,11 +50,15 @@ def main():
     try:
         res = requests.get(members_url, headers=get_headers(), timeout=15)
         print(f"LwAtlas Yanıt Kodu: {res.status_code}")
+        if res.status_code != 200:
+            print(f"HATA: LwAtlas kapıyı açmadı! Cloudflare Banı yedik. GitHub IP'si reddedildi.")
+            sys.exit(1) # SESSİZCE ÖLMESİN, GİTHUB'I ZORLA KIRMIZIYA DÜŞÜRSÜN
+            
         raw_members = res.json().get("members", [])
         print(f"Toplam üye bulundu: {len(raw_members)}")
     except Exception as e:
         print(f"LwAtlas ana listeye erişilemedi, hata: {e}")
-        return
+        sys.exit(1) # GİTHUB'I ZORLA KIRMIZIYA DÜŞÜRSÜN
 
     random.shuffle(raw_members)
     new_data = {}
@@ -95,11 +100,10 @@ def main():
                         
                         main_squad = None
                         
-                        # YENİ JSON MANTIĞI: Sources (Kaynaklar) içinde dön ve Kamyonları (truck) atla!
                         for src in sources:
                             source_name = src.get("source", "")
                             if source_name == "truck":
-                                continue # Kamyon ordusuysa pas geç
+                                continue
                             
                             squads = src.get("squads", [])
                             for s in squads:

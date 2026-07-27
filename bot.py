@@ -3,7 +3,6 @@ import time
 import random
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
-# Doğru İttifak ID'miz sisteme işlendi
 ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
 
 HERO_TYPES = {
@@ -17,15 +16,24 @@ HERO_TYPES = {
 }
 
 def get_headers():
-    # VIP Kapı Açıcı Kimliğimiz (Cookie ve Cloudflare Clearance) buraya eklendi
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Cookie": "_ga=GA1.1.1447011317.1782809932; _ga_FNLN1GJZEH=GS2.1.s1783682669$o5$g0$t1783682669$j60$l0$h0; jwt=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyOTgiLCJpYXQiOjE3ODUxODgwNzMsImV4cCI6MTc4NTE5MTY3M30.jfQMMgZWLvibUVNK34Ry-GPXHcnydxtMif6jj-GEt74; refreshToken=fe3916ad-74f4-4a6c-86b2-531bca59af30; cf_clearance=Wj8e8TQ60U4yErutqwtnldWezjMc.3tYefYCXf0nUtA-1785188086-1.2.1.1-rTBsnooeEjajSKC_iShu_VQgMLfQMqrw7W3Lm0nS8DUD.bexJBFTIvyg6bDg7vTHgqpJS2m1h2OnVCevts8zD5Ij_maiIBDiLlguE93wask.hY9C58Q4WXzGAglLYZCQc0DT9olZaKwajZQzCEcLbDUiY_AdSVuP_6eTzelhNOQRkRLQL3rdsotDKL9t0C7aXDcsBgNOjTFkSI7ORVkbPIc1TvkwyYmG_QwmRRJE.TloD6uxmQMs.7O573ctrvQEUiQ5eh2hs31IcYrv8m0JxzOFT2r30kjS5r89fsXOko2yDZhKLfHaZ8z1jz.mgNo7rFj8E5aGnPqiXcjEcHJjii4VuAHJDbqWh2jZopK.OjXK4p4ruIE8uvXgUeXsd4MZmJQCRt3c_okf9T0icoExyxt8a5xcnyPNpF9ZZS67gd733K19HijMdrcVk60hlh4Z5bEenB1oLc1C4ehSRGACKA"
+        "accept": "application/json, text/plain, */*",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cookie": "_ga=GA1.1.1447011317.1782809932; _ga_FNLN1GJZEH=GS2.1.s1783682669$o5$g0$t1783682669$j60$l0$h0; jwt=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyOTgiLCJpYXQiOjE3ODUxODgwNzMsImV4cCI6MTc4NTE5MTY3M30.jfQMMgZWLvibUVNK34Ry-GPXHcnydxtMif6jj-GEt74; refreshToken=fe3916ad-74f4-4a6c-86b2-531bca59af30; cf_clearance=Wj8e8TQ60U4yErutqwtnldWezjMc.3tYefYCXf0nUtA-1785188086-1.2.1.1-rTBsnooeEjajSKC_iShu_VQgMLfQMqrw7W3Lm0nS8DUD.bexJBFTIvyg6bDg7vTHgqpJS2m1h2OnVCevts8zD5Ij_maiIBDiLlguE93wask.hY9C58Q4WXzGAglLYZCQc0DT9olZaKwajZQzCEcLbDUiY_AdSVuP_6eTzelhNOQRkRLQL3rdsotDKL9t0C7aXDcsBgNOjTFkSI7ORVkbPIc1TvkwyYmG_QwmRRJE.TloD6uxmQMs.7O573ctrvQEUiQ5eh2hs31IcYrv8m0JxzOFT2r30kjS5r89fsXOko2yDZhKLfHaZ8z1jz.mgNo7rFj8E5aGnPqiXcjEcHJjii4VuAHJDbqWh2jZopK.OjXK4p4ruIE8uvXgUeXsd4MZmJQCRt3c_okf9T0icoExyxt8a5xcnyPNpF9ZZS67gd733K19HijMdrcVk60hlh4Z5bEenB1oLc1C4ehSRGACKA",
+        "origin": "https://lwatlas.com",
+        "referer": "https://lwatlas.com/",
+        "sec-ch-ua": '"Not;A=Brand";v="8", "Chromium";v="150", "Brave";v="150"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
     }
 
 def main():
-    print("Gölge İşçi Başladı ve VIP Kimlikle Kapılar Kırılıyor!")
+    print("Gölge İşçi Başladı! (Tam Kimlik Doğrulaması Aktif)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
@@ -35,7 +43,7 @@ def main():
         print(f"Firebase bağlantı hatası: {e}")
         history_map = {}
 
-    members_url = f"https://lwatlas.com/api/v1/alliances/{ALLIANCE_ID}/members"
+    members_url = f"https://api.lwatlas.com/v1/alliances/{ALLIANCE_ID}/members"
     print(f"LwAtlas'a istek atılıyor: {members_url}")
     
     try:
@@ -67,7 +75,6 @@ def main():
             continue
 
         is_t10 = False
-        # T10 kuralı: Sadece seviye 30 olup, gücü çok yüksek olanları T10 say. Gerekirse bu sayıları tablon için daha da yükseltebiliriz.
         if lvl == 30 and total_power >= 100000000 and non_army_power >= 70000000:
             is_t10 = True
 
@@ -114,7 +121,7 @@ def main():
                             else:
                                 api_type = "Hibrit" 
                         break 
-                    elif sq_res.status_code in [403, 429]:
+                    elif sq_res.status_code in [401, 403, 429]:
                         time.sleep(3) 
                 except:
                     time.sleep(2)

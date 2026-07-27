@@ -1,0 +1,24 @@
+name: MetsaRadar Gölge İşçi
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Her 30 dakikada bir kendi kendine çalışır
+  workflow_dispatch: # Butona basarak manuel de tetikleyebilmeni sağlar
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v3
+
+      - name: Python'u Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Kütüphaneleri Yükle
+        run: pip install -r requirements.txt
+
+      - name: Botu Ateşle
+        run: python bot.py

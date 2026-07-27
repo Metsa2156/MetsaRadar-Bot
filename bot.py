@@ -33,7 +33,7 @@ def get_headers():
     }
 
 def main():
-    print("Gölge İşçi Başladı! (Tam Kimlik Doğrulaması Aktif)")
+    print("Gölge İşçi Başladı! (Yeni JSON ve Kamyon Filtresi Aktif)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
@@ -90,13 +90,23 @@ def main():
                 try:
                     sq_res = requests.get(squad_url, headers=get_headers(), timeout=10)
                     if sq_res.status_code == 200:
-                        squads = sq_res.json().get("squads", [])
+                        data = sq_res.json()
+                        sources = data.get("sources", [])
+                        
                         main_squad = None
-                        for s in squads:
-                            cp = int(s.get("squadPower", 0))
-                            if cp > api_squad_power:
-                                api_squad_power = cp
-                                main_squad = s
+                        
+                        # YENİ JSON MANTIĞI: Sources (Kaynaklar) içinde dön ve Kamyonları (truck) atla!
+                        for src in sources:
+                            source_name = src.get("source", "")
+                            if source_name == "truck":
+                                continue # Kamyon ordusuysa pas geç
+                            
+                            squads = src.get("squads", [])
+                            for s in squads:
+                                cp = int(s.get("squadPower", 0))
+                                if cp > api_squad_power:
+                                    api_squad_power = cp
+                                    main_squad = s
                         
                         if main_squad and "heroes" in main_squad:
                             counts = {"Tank": 0, "Uçak": 0, "Füze": 0, "Bilinmeyen": 0}

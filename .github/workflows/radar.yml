@@ -2,7 +2,7 @@ name: MetsaRadar Gölge İşçi
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */12 * * *' # Her 12 saatte bir otomatik çalışır (Günde 2 kez)
   workflow_dispatch:
 
 jobs:

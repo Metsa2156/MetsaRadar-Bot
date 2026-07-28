@@ -4,6 +4,7 @@ import random
 import sys
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
+# SADECE ATA8 İTTİFAKI
 ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
 
 HERO_TYPES = {
@@ -34,7 +35,8 @@ def get_headers():
     }
 
 def main():
-    print("Gölge İşçi Başladı! (Maksimum Güç Algoritması Aktif)")
+    # BU YAZIYI LOGLARDA GÖRMÜYORSAN KOD KAYDOLMAMIŞ DEMEKTİR!
+    print("Gölge İşçi Başladı! (GİTHUB ÖZEL SÜRÜMÜ - ATA8 AKTİF)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
@@ -84,7 +86,8 @@ def main():
             squad_url = f"https://api.lwatlas.com/v1/players/{uid}/squads"
             
             for attempt in range(2):
-                time.sleep(random.uniform(1.5, 3.0)) 
+                # GITHUB BAN YEMESİN DİYE BEKLEME SÜRESİ ARTIRILDI
+                time.sleep(random.uniform(2.5, 4.5)) 
                 try:
                     sq_res = requests.get(squad_url, headers=get_headers(), timeout=10)
                     if sq_res.status_code == 200:
@@ -92,12 +95,10 @@ def main():
                         sources = data.get("sources", [])
                         main_squad = None
                         
-                        # BÜTÜN KAYNAKLARI TARA, EN YÜKSEK GÜCÜ BUL! (Kamyon dahil, null korumalı)
                         for src in sources:
                             squads = src.get("squads", [])
                             for s in squads:
                                 raw_cp = s.get("squadPower")
-                                # Eğer güç null (None) gelirse es geç, sayıysa karşılaştır
                                 if raw_cp is not None:
                                     cp = int(raw_cp)
                                     if cp > api_squad_power:

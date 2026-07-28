@@ -4,7 +4,6 @@ import random
 import sys
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
-# SADECE ATA8 İTTİFAKI
 ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
 
 HERO_TYPES = {
@@ -35,8 +34,7 @@ def get_headers():
     }
 
 def main():
-    # BU YAZIYI LOGLARDA GÖRMÜYORSAN KOD KAYDOLMAMIŞ DEMEKTİR!
-    print("Gölge İşçi Başladı! (GİTHUB ÖZEL SÜRÜMÜ - ATA8 AKTİF)")
+    print("Gölge İşçi Başladı! (HATA RADARI AKTİF)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
@@ -45,6 +43,7 @@ def main():
         history_map = {}
 
     members_url = f"https://api.lwatlas.com/v1/alliances/{ALLIANCE_ID}/members"
+    print(f"İstek atılan URL: {members_url}")
     
     try:
         res = requests.get(members_url, headers=get_headers(), timeout=15)
@@ -56,6 +55,21 @@ def main():
     except Exception as e:
         print(f"Ana listeye erişilemedi: {e}")
         sys.exit(1)
+
+    if not raw_members:
+        print("HATA: Liste bomboş geldi!")
+        sys.exit(1)
+
+    # --- KRİTİK KONTROL NOKTASI ---
+    ilk_oyuncu = raw_members[0].get("playerName", "")
+    ata8_mi = any("MADHEX" in m.get("playerName", "") or "K4LENDERBEY" in m.get("playerName", "") for m in raw_members)
+    
+    if not ata8_mi:
+        print(f"KRİTİK HATA BULDUM! Çekilen ilk oyuncu: {ilk_oyuncu}")
+        print("AÇIKLAMA: Bot doğru ATA8 ID'sine istek atıyor AMA LwAtlas senin Cookie'ni (jwt) görünce URL'yi hiçe sayıp sana eski ittifakının listesini veriyor! Çözüm için LwAtlas sitesine girip Cookie'yi yenilemelisin.")
+        sys.exit(1)
+    else:
+        print("SÜPER! ATA8 Aslanları listeye başarıyla indi. Birlikler taranıyor...")
 
     random.shuffle(raw_members)
     new_data = {}
@@ -86,7 +100,6 @@ def main():
             squad_url = f"https://api.lwatlas.com/v1/players/{uid}/squads"
             
             for attempt in range(2):
-                # GITHUB BAN YEMESİN DİYE BEKLEME SÜRESİ ARTIRILDI
                 time.sleep(random.uniform(2.5, 4.5)) 
                 try:
                     sq_res = requests.get(squad_url, headers=get_headers(), timeout=10)
@@ -129,7 +142,7 @@ def main():
                                 api_type = "Hibrit" 
                         break 
                     else:
-                        print(f"[{name}] Birlikler Çekilemedi! Hata Kodu: {sq_res.status_code}")
+                        print(f"[{name}] Takım okunamadı (Ban/Hata): {sq_res.status_code}")
                         time.sleep(3) 
                 except:
                     time.sleep(2)

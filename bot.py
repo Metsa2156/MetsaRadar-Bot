@@ -1,7 +1,7 @@
 import requests
 import time
 import random
-import sys  # Ölümcül hata sigortası için eklendi
+import sys
 
 FIREBASE_URL = "https://metsaradar-default-rtdb.europe-west1.firebasedatabase.app/radar.json"
 ALLIANCE_ID = "a3ceb9ca6dc249f88ecefceaf045eebc"
@@ -34,31 +34,26 @@ def get_headers():
     }
 
 def main():
-    print("Gölge İşçi Başladı! (Ölümcül Hata Sigortası Aktif)")
+    print("Gölge İşçi Başladı! (Maksimum Güç Algoritması Aktif)")
     
     try:
         fb_res = requests.get(FIREBASE_URL, timeout=10)
         history_map = fb_res.json() if fb_res.status_code == 200 and fb_res.json() else {}
-        print("Firebase bağlantısı başarılı.")
-    except Exception as e:
-        print(f"Firebase bağlantı hatası: {e}")
+    except Exception:
         history_map = {}
 
     members_url = f"https://api.lwatlas.com/v1/alliances/{ALLIANCE_ID}/members"
-    print(f"LwAtlas'a istek atılıyor: {members_url}")
     
     try:
         res = requests.get(members_url, headers=get_headers(), timeout=15)
-        print(f"LwAtlas Yanıt Kodu: {res.status_code}")
         if res.status_code != 200:
-            print(f"HATA: LwAtlas kapıyı açmadı! Cloudflare Banı yedik. GitHub IP'si reddedildi.")
-            sys.exit(1) # SESSİZCE ÖLMESİN, GİTHUB'I ZORLA KIRMIZIYA DÜŞÜRSÜN
+            print(f"HATA: LwAtlas kapıyı açmadı! Kod: {res.status_code}")
+            sys.exit(1)
             
         raw_members = res.json().get("members", [])
-        print(f"Toplam üye bulundu: {len(raw_members)}")
     except Exception as e:
-        print(f"LwAtlas ana listeye erişilemedi, hata: {e}")
-        sys.exit(1) # GİTHUB'I ZORLA KIRMIZIYA DÜŞÜRSÜN
+        print(f"Ana listeye erişilemedi: {e}")
+        sys.exit(1)
 
     random.shuffle(raw_members)
     new_data = {}
@@ -67,8 +62,7 @@ def main():
         name = m.get("playerName", "").replace("\u200B", "").replace("\u200D", "").replace("\uFEFF", "").strip()
         map_key = name.lower().replace(" ", "")
         
-        if not map_key:
-            continue
+        if not map_key: continue
 
         lvl = int(m.get("level", 0))
         rank = m.get("allianceRank", 1)
@@ -76,8 +70,7 @@ def main():
         army_power = int(m.get("armyPower", 0))
         non_army_power = total_power - army_power
 
-        if lvl < 28:
-            continue
+        if lvl < 28: continue
 
         is_t10 = False
         if lvl == 30 and total_power >= 100000000 and non_army_power >= 70000000:
@@ -97,20 +90,19 @@ def main():
                     if sq_res.status_code == 200:
                         data = sq_res.json()
                         sources = data.get("sources", [])
-                        
                         main_squad = None
                         
+                        # BÜTÜN KAYNAKLARI TARA, EN YÜKSEK GÜCÜ BUL! (Kamyon dahil, null korumalı)
                         for src in sources:
-                            source_name = src.get("source", "")
-                            if source_name == "truck":
-                                continue
-                            
                             squads = src.get("squads", [])
                             for s in squads:
-                                cp = int(s.get("squadPower", 0))
-                                if cp > api_squad_power:
-                                    api_squad_power = cp
-                                    main_squad = s
+                                raw_cp = s.get("squadPower")
+                                # Eğer güç null (None) gelirse es geç, sayıysa karşılaştır
+                                if raw_cp is not None:
+                                    cp = int(raw_cp)
+                                    if cp > api_squad_power:
+                                        api_squad_power = cp
+                                        main_squad = s
                         
                         if main_squad and "heroes" in main_squad:
                             counts = {"Tank": 0, "Uçak": 0, "Füze": 0, "Bilinmeyen": 0}
@@ -135,7 +127,8 @@ def main():
                             else:
                                 api_type = "Hibrit" 
                         break 
-                    elif sq_res.status_code in [401, 403, 429]:
+                    else:
+                        print(f"[{name}] Birlikler Çekilemedi! Hata Kodu: {sq_res.status_code}")
                         time.sleep(3) 
                 except:
                     time.sleep(2)
@@ -145,8 +138,7 @@ def main():
         final_type = api_type
         
         old_power = old_data.get("power", 0)
-        if old_power > 50000000: 
-            old_power = 0
+        if old_power > 50000000: old_power = 0
             
         if final_power == 0 or old_power > final_power:
             final_power = old_power
@@ -155,8 +147,7 @@ def main():
             final_type = old_data.get("type")
         
         save_type = final_type
-        if final_power < 9000000:
-            save_type = "?"
+        if final_power < 9000000: save_type = "?"
 
         new_data[map_key] = {
             "originalName": name,

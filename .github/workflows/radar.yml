@@ -21,4 +21,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Botu Ateşle
-        run: python -u bot.py
+        run: python -u metsa.py

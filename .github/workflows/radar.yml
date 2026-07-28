@@ -1,24 +1,9 @@
-name: MetsaRadar Gölge İşçi
-
-on:
-  schedule:
-    - cron: '*/30 * * * *' # Her 30 dakikada bir otomatik çalışır
-  workflow_dispatch: # Actions sekmesindeki manuel tetikleme butonu
-
-jobs:
-  run-bot:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Kodları Çek
-        uses: actions/checkout@v4
-
-      - name: Python'u Kur
-        uses: actions/setup-python@v5
+- name: Node.js'i Kur
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.10'
-
-      - name: Kütüphaneleri Yükle
-        run: pip install -r requirements.txt
+          node-version: '18'
 
       - name: Botu Ateşle
-        run: python -u bot.py
+        env:
+          LWATLAS_API_KEY: ${{ secrets.LWATLAS_API_KEY }}
+        run: node bot.js

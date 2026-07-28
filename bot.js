@@ -12,11 +12,10 @@ const HERO_TYPES = {
   40007: "Füze", 40013: "Füze", 40018: "Füze"
 };
 
-// Bekleme (Sleep) fonksiyonumuz
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function runBot() {
-  console.log("MetsaRadar Bot çalışmaya başladı...");
+  console.log("Resmi API ile MetsaRadar Bot çalışmaya başladı...");
   
   const options = {
     method: "GET",
@@ -26,6 +25,7 @@ async function runBot() {
     }
   };
 
+  // Resmi members endpoint'i tüm listeyi, gücü ve rütbeyi tek kalemde veriyor!
   const membersUrl = "https://api.lwatlas.com/v1/alliances/" + ALLIANCE_ID + "/members";
   const res = await fetch(membersUrl, options);
   
@@ -46,21 +46,22 @@ async function runBot() {
     
     const lvl = parseInt(m.level || 0);
     
-    // 27 Level çöpte!
+    // KURAL: 27 Level Çöpte!
     if (lvl < 28) continue; 
     
     const rank = m.allianceRank || 1;
-    const totalPower = parseInt(m.power || 0);
+    const totalPower = parseInt(m.power || 0); // Resmi net güç
     const armyPower = parseInt(m.armyPower || 0);
     const nonArmyPower = totalPower - armyPower;
     
+    // T10 Kuralı: Lvl 30, Power > 100M, Non-Army > 70M
     const isT10 = (lvl === 30 && totalPower >= 100000000 && nonArmyPower >= 70000000);
     
-    let apiTruckPower = 0;
     let apiType = "?";
     
+    // Eğer adam 9M üstü ise takım türünü (Uçak/Tank) öğrenmek için squads'a bakıyoruz
     if (totalPower >= 9000000) {
-      await sleep(1200); // 60 Limit/Dakika koruması (1.2 Sn)
+      await sleep(1000); // 1 saniye kibar bekleme
       
       const squadUrl = "https://api.lwatlas.com/v1/players/" + m.playerUid + "/squads";
       const sqRes = await fetch(squadUrl, options);
@@ -70,17 +71,17 @@ async function runBot() {
         const sources = sqData.sources || [];
         let mainTruck = null;
         
-        // Sadece Trucks aranıyor
         for (let sIdx = 0; sIdx < sources.length; sIdx++) {
           const trucks = sources[sIdx].trucks || []; 
           for (let tIdx = 0; tIdx < trucks.length; tIdx++) {
             const trk = trucks[tIdx];
             const cp = parseInt(trk.squadPower || trk.power || trk.truckPower || 0);
-            if (cp > apiTruckPower) {
-              apiTruckPower = cp;
+            if (cp > 0) {
               mainTruck = trk;
+              break;
             }
           }
+          if (mainTruck) break;
         }
         
         if (mainTruck && mainTruck.heroes) {
@@ -105,19 +106,19 @@ async function runBot() {
     }
     
     let saveType = apiType;
-    if (apiTruckPower < 9000000) saveType = "?";
+    if (totalPower < 9000000) saveType = "?";
     
     newData[mapKey] = {
       originalName: name,
       level: lvl,
       rank: "R" + rank,
       type: saveType,
-      power: apiTruckPower,
+      power: totalPower, // Artık sıfır değil, resmi net güç yazılıyor!
       t10: isT10
     };
   }
   
-  console.log("LwAtlas'tan veriler çekildi. Firebase güncelleniyor...");
+  console.log("Resmi veriler işlendi. Firebase güncelleniyor...");
   
   const fbRes = await fetch(FIREBASE_URL, {
     method: "PUT",
@@ -126,11 +127,10 @@ async function runBot() {
   });
   
   if (fbRes.ok) {
-    console.log("Firebase başarıyla güncellendi! İşlem tamam.");
+    console.log("Firebase tertemiz verilerle güncellendi!");
   } else {
-    console.error("Firebase'e yazılırken hata oluştu:", fbRes.status);
+    console.error("Firebase hatası:", fbRes.status);
   }
 }
 
-// Motoru Ateşle
 runBot();

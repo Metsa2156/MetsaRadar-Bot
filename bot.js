@@ -15,7 +15,7 @@ const HERO_TYPES = {
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function runBot() {
-  console.log("Resmi API ile MetsaRadar Bot çalışmaya başladı...");
+  console.log("MetsaRadar Doğru JSON Yapısı Botu Çalışıyor...");
   
   const options = {
     method: "GET",
@@ -25,7 +25,6 @@ async function runBot() {
     }
   };
 
-  // Resmi members endpoint'i tüm listeyi, gücü ve rütbeyi tek kalemde veriyor!
   const membersUrl = "https://api.lwatlas.com/v1/alliances/" + ALLIANCE_ID + "/members";
   const res = await fetch(membersUrl, options);
   
@@ -50,18 +49,17 @@ async function runBot() {
     if (lvl < 28) continue; 
     
     const rank = m.allianceRank || 1;
-    const totalPower = parseInt(m.power || 0); // Resmi net güç
+    const totalPower = parseInt(m.power || 0);
     const armyPower = parseInt(m.armyPower || 0);
     const nonArmyPower = totalPower - armyPower;
     
-    // T10 Kuralı: Lvl 30, Power > 100M, Non-Army > 70M
     const isT10 = (lvl === 30 && totalPower >= 100000000 && nonArmyPower >= 70000000);
     
+    let maxSquadPower = 0;
     let apiType = "?";
     
-    // Eğer adam 9M üstü ise takım türünü (Uçak/Tank) öğrenmek için squads'a bakıyoruz
     if (totalPower >= 9000000) {
-      await sleep(1000); // 1 saniye kibar bekleme
+      await sleep(1200); // 60 istek/dakika sınırı koruması
       
       const squadUrl = "https://api.lwatlas.com/v1/players/" + m.playerUid + "/squads";
       const sqRes = await fetch(squadUrl, options);
@@ -69,25 +67,28 @@ async function runBot() {
       if (sqRes.ok) {
         const sqData = await sqRes.json();
         const sources = sqData.sources || [];
-        let mainTruck = null;
+        let bestSquad = null;
         
+        // JSON'daki 'sources' dizisini ve içindeki 'squads' dizilerini tarıyoruz
         for (let sIdx = 0; sIdx < sources.length; sIdx++) {
-          const trucks = sources[sIdx].trucks || []; 
-          for (let tIdx = 0; tIdx < trucks.length; tIdx++) {
-            const trk = trucks[tIdx];
-            const cp = parseInt(trk.squadPower || trk.power || trk.truckPower || 0);
-            if (cp > 0) {
-              mainTruck = trk;
-              break;
+          const squadsList = sources[sIdx].squads || []; 
+          for (let qIdx = 0; qIdx < squadsList.length; qIdx++) {
+            const sq = squadsList[qIdx];
+            // Doğru alan adı: squadPower
+            const powerVal = parseInt(sq.squadPower || 0);
+            
+            if (powerVal > maxSquadPower) {
+              maxSquadPower = powerVal;
+              bestSquad = sq;
             }
           }
-          if (mainTruck) break;
         }
         
-        if (mainTruck && mainTruck.heroes) {
+        // En yüksek güçlü takımın kahramanlarından türünü (Tank/Uçak) hesapla
+        if (bestSquad && bestSquad.heroes) {
           const counts = {"Tank": 0, "Uçak": 0, "Füze": 0, "Bilinmeyen": 0};
-          for (let hIdx = 0; hIdx < mainTruck.heroes.length; hIdx++) {
-            const hid = mainTruck.heroes[hIdx].heroCfgId;
+          for (let hIdx = 0; hIdx < bestSquad.heroes.length; hIdx++) {
+            const hid = bestSquad.heroes[hIdx].heroCfgId;
             if (HERO_TYPES[hid]) counts[HERO_TYPES[hid]]++;
             else counts.Bilinmeyen++;
           }
@@ -106,19 +107,21 @@ async function runBot() {
     }
     
     let saveType = apiType;
-    if (totalPower < 9000000) saveType = "?";
+    if (maxSquadPower < 9000000) {
+      saveType = "?";
+    }
     
     newData[mapKey] = {
       originalName: name,
       level: lvl,
       rank: "R" + rank,
       type: saveType,
-      power: totalPower, // Artık sıfır değil, resmi net güç yazılıyor!
+      power: maxSquadPower, // Doğrudan JSON'dan çekilen en yüksek squadPower yazılıyor!
       t10: isT10
     };
   }
   
-  console.log("Resmi veriler işlendi. Firebase güncelleniyor...");
+  console.log("Takım güçleri doğru JSON yapısıyla çekildi. Firebase güncelleniyor...");
   
   const fbRes = await fetch(FIREBASE_URL, {
     method: "PUT",
@@ -127,7 +130,7 @@ async function runBot() {
   });
   
   if (fbRes.ok) {
-    console.log("Firebase tertemiz verilerle güncellendi!");
+    console.log("Firebase başarıyla güncellendi!");
   } else {
     console.error("Firebase hatası:", fbRes.status);
   }

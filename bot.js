@@ -53,7 +53,7 @@ async function runBot() {
     const armyPower = parseInt(m.armyPower || 0);
     const nonArmyPower = totalPower - armyPower;
     
-    const isT10 = (lvl === 30 && totalPower >= 100000000 && nonArmyPower >= 70000000);
+    const isT10 = (lvl === 30 && totalPower >= 100000000 && nonArmyPower >= 75000000);
     
     let maxSquadPower = 0;
     let apiType = "?";
